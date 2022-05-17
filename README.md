@@ -12,7 +12,7 @@ and subscribe to topics to execute custom business logic using the `@ExternalTas
 Additionally, it shows how to auto-wire a `SpringTopicSubscription` bean as well as open and close a
 subscription after the application has been started.
 
-> This example is based on the [Order Handling Example](../../../clients/java/order-handling).
+> This example is based on the [External Task Client Spring Boot Starter: Order Handling Example](https://github.com/camunda/camunda-bpm-examples/tree/master/spring-boot-starter/external-task-client/order-handling-spring-boot).
 
 ## Please show me the important parts!
 
@@ -49,168 +49,96 @@ camunda.bpm.client:
   worker-id: spring-boot-client # Identifies the worker towards the Engine
 ```
 
-Next, we create a `HandlerConfiguration` class to subscribe to topics and add our custom 
+Next, we create a `FirstTask` class to subscribe to topics and add our custom 
 business logic by defining a bean with the return type `ExternalTaskHandler` and add the 
 `@ExternalTaskSubscription` annotation to the bean method. The lambda function's body contains 
 our custom business logic that is executed when an External Task is fetched:
 
 ```java
 @Configuration
-public class HandlerConfiguration {
+public class FirstTask {
 
-  protected static final Logger LOG = LoggerFactory.getLogger(HandlerConfiguration.class);
+  protected static final Logger LOG = LoggerFactory.getLogger(FirstTask.class);
 
   @Bean
-  @ExternalTaskSubscription("invoiceCreator")
-  public ExternalTaskHandler invoiceCreatorHandler() {
+  @ExternalTaskSubscription("myFirstServiceTask")
+  public ExternalTaskHandler firstTaskHandler() {
     return (externalTask, externalTaskService) -> {
 
-      // instantiate an invoice object
-      Invoice invoice = new Invoice("A123");
+      LOG.info("HandlerConfiguration");
 
-      // create an object typed variable with the serialization format XML
-      ObjectValue invoiceValue = ClientValues
-          .objectValue(invoice)
-          .serializationDataFormat("application/xml")
-          .create();
 
-      // add the invoice object and its id to a map
       Map<String, Object> variables = new HashMap<>();
-      variables.put("invoiceId", invoice.id);
-      variables.put("invoice", invoiceValue);
 
       // select the scope of the variables
       boolean isRandomSample = Math.random() <= 0.5;
       if (isRandomSample) {
-        externalTaskService.complete(externalTask, variables);
+        variables.put("test", "lalala");
       } else {
-        externalTaskService.complete(externalTask, null, variables);
+        variables.put("test", "blablabla");
       }
+      
+      externalTaskService.complete(externalTask, variables);
 
       LOG.info("The External Task {} has been completed!", externalTask.getId());
 
     };
   }
 
-  @Bean
-  @ExternalTaskSubscription(
-      topicName = "invoiceArchiver",
-      autoOpen = false
-  )
-  public ExternalTaskHandler invoiceArchiverHandler() {
-    return (externalTask, externalTaskService) -> {
-      TypedValue typedInvoice = externalTask.getVariableTyped("invoice");
-      Invoice invoice = (Invoice) typedInvoice.getValue();
-      LOG.info("Invoice on process scope archived: {}", invoice);
-      externalTaskService.complete(externalTask);
-    };
-  }
+  // There could be multiple ExternalTaskSubscription in this one file,
+  // but it might be clearer to seperate it to different classes.
+
+  // @Bean
+  // @ExternalTaskSubscription("mySecondServiceTask")
+  // public ExternalTaskHandler secondTaskHandler() {
+  //   return (externalTask, externalTaskService) -> {
+
+  //     [...]
+
+  //   };
+  // }
 
 }
 ```
-
-The handler `invoiceArchiverHandler` is configured with `autoOpen = false` which means that the 
-Client does not start automatically with fetching for External Tasks. This allows us to open the 
-subscription after the application has been started. 
 
 In the `Subscriptions` class we auto-wire the subscription beans and can access the configuration
-of the beans. However, the subscriptions are not initialized at this point and cannot be opened or 
-closed. This is why we catch the `SubscriptionInitializedEvent`. Once initialized, the subscription
-can be opened or closed:
-
-```java
-@Component
-public class Subscriptions implements ApplicationListener<SubscriptionInitializedEvent> {
-
-  protected static final Logger LOG = LoggerFactory.getLogger(Subscriptions.class);
-
-  @Autowired
-  public SpringTopicSubscription invoiceCreatorHandlerSubscription;
-
-  @Autowired
-  public SpringTopicSubscription invoiceArchiverHandlerSubscription;
-
-  @PostConstruct
-  public void listSubscriptionBeans() {
-    LOG.info("Subscription bean 'invoiceCreatorHandlerSubscription' has topic name: {} ",
-        invoiceCreatorHandlerSubscription.getTopicName());
-    LOG.info("Subscription bean 'invoiceArchiverHandlerSubscription' has topic name: {} ",
-        invoiceArchiverHandlerSubscription.getTopicName());
-  }
-
-  @Override
-  public void onApplicationEvent(SubscriptionInitializedEvent event) {
-    SpringTopicSubscription springTopicSubscription = event.getSource();
-    String topicName = springTopicSubscription.getTopicName();
-    LOG.info("Subscription with topic name '{}' initialized", topicName);
-
-    if (!springTopicSubscription.isOpen()) {
-      LOG.info("Subscription with topic name '{}' not yet opened", topicName);
-
-      // do something before subscription is opened
-
-      springTopicSubscription.open();
-
-      LOG.info("Subscription with topic name '{}' opened", topicName);
-
-      springTopicSubscription.close();
-
-      LOG.info("Subscription with topic name '{}' temporarily closed", topicName);
-
-      // do something with subscription temporarily closed
-
-      springTopicSubscription.open();
-
-      LOG.info("Subscription with topic name '{}' reopened again", topicName);
-    }
-  }
-
-}
-```
+of the beans. 
 
 ## How to use it?
 
-1. Make sure to have an up and running Camunda Platform Runtime REST API
-2. Deploy the process [order-handling.bpmn](./order-handling.bpmn) to the Camunda Platform Runtime (e.g., via Camunda Modeler)
-3. Check out the project with Git
-4. Import the project into your IDE
-5. Start the main class in your IDE
-6. Watch out for the following log output:
+1. Make sure to have an up and running Camunda Platform Runtime REST API on 8080
+2. Deploy the process [demo-process.bpmn](./demo-process.bpmn) to the Camunda Platform Runtime (e.g., via Camunda Modeler)
+3. Start the main class in your IDE
+4. Start a process in [Camunda Web Interface](http://localhost:8080/camunda/app/tasklist/default/)
+5. Watch out for the following log output:
 
 ```
    ____                                           _             ____    _           _      __
-  / ___|   __ _   _ __ ___    _   _   _ __     __| |   __ _    |  _ \  | |   __ _  | |_   / _|   ___    _ __   _ __ ___
- | |      / _` | | '_ ` _ \  | | | | | '_ \   / _` |  / _` |   | |_) | | |  / _` | | __| | |_   / _ \  | '__| | '_ ` _ \
- | |___  | (_| | | | | | | | | |_| | | | | | | (_| | | (_| |   |  __/  | | | (_| | | |_  |  _| | (_) | | |    | | | | | |
-  \____|  \__,_| |_| |_| |_|  \__,_| |_| |_|  \__,_|  \__,_|   |_|     |_|  \__,_|  \__| |_|    \___/  |_|    |_| |_| |_|
+  / ___|   __ _   _ __ ___    _   _   _ __     __| |   __ _    |  _ \  | |   __ _  | |_   / _|   ___    _ __   _ __ ___      
+ | |      / _` | | '_ ` _ \  | | | | | '_ \   / _` |  / _` |   | |_) | | |  / _` | | __| | |_   / _ \  | '__| | '_ ` _ \     
+ | |___  | (_| | | | | | | | | |_| | | | | | | (_| | | (_| |   |  __/  | | | (_| | | |_  |  _| | (_) | | |    | | | | | |    
+  \____|  \__,_| |_| |_| |_|  \__,_| |_| |_|  \__,_|  \__,_|   |_|     |_|  \__,_|  \__| |_|    \___/  |_|    |_| |_| |_|    
 
-  _____          _                                   _     _____                 _         ____   _   _                  _
- | ____| __  __ | |_    ___   _ __   _ __     __ _  | |   |_   _|   __ _   ___  | | __    / ___| | | (_)   ___   _ __   | |_
+  _____          _                                   _     _____                 _         ____   _   _                  _   
+ | ____| __  __ | |_    ___   _ __   _ __     __ _  | |   |_   _|   __ _   ___  | | __    / ___| | | (_)   ___   _ __   | |_ 
  |  _|   \ \/ / | __|  / _ \ | '__| | '_ \   / _` | | |     | |    / _` | / __| | |/ /   | |     | | | |  / _ \ | '_ \  | __|
- | |___   >  <  | |_  |  __/ | |    | | | | | (_| | | |     | |   | (_| | \__ \ |   <    | |___  | | | | |  __/ | | | | | |_
+ | |___   >  <  | |_  |  __/ | |    | | | | | (_| | | |     | |   | (_| | \__ \ |   <    | |___  | | | | |  __/ | | | | | |_ 
  |_____| /_/\_\  \__|  \___| |_|    |_| |_|  \__,_| |_|     |_|    \__,_| |___/ |_|\_\    \____| |_| |_|  \___| |_| |_|  \__|
 
-  Spring-Boot:  (v2.4.3)
+  Spring-Boot:  (v2.6.4)
   Camunda Platform: (v7.17.0)
-2021-03-19 11:41:09.697  INFO 24157 --- [           main] o.c.b.s.b.e.l.client.Application         : Starting Application using Java 1.8.0_131 on localhost with PID 20376 (~/camunda-bpm-examples/spring-boot-starter/external-task-client/loan-granting-spring-boot/target/classes started by user in ~/camunda-bpm-examples/spring-boot-starter/external-task-client)
-2021-03-19 11:41:09.697  INFO 24157 --- [           main] o.c.b.s.b.e.l.client.Application         : No active profile set, falling back to default profiles: default
-...
-2021-03-19 11:41:30.429  INFO 24157 --- [           main] o.c.b.spring.boot.example.Subscriptions  : Subscription bean 'invoiceCreatorHandlerSubscription' has topic name: invoiceCreator 
-2021-03-19 11:41:30.429  INFO 24157 --- [           main] o.c.b.spring.boot.example.Subscriptions  : Subscription bean 'invoiceArchiverHandlerSubscription' has topic name: invoiceArchiver 
-2021-03-19 11:41:30.527  INFO 24157 --- [           main] o.c.bpm.spring.boot.example.Application  : Started Application in 1.735 seconds (JVM running for 2.63)
-2021-03-19 11:41:30.532  INFO 24157 --- [           main] o.c.b.spring.boot.example.Subscriptions  : Subscription with topic name 'invoiceCreator' initialized
-2021-03-19 11:41:30.535  INFO 24157 --- [           main] o.c.b.spring.boot.example.Subscriptions  : Subscription with topic name 'invoiceArchiver' initialized
-2021-03-19 11:41:30.535  INFO 24157 --- [           main] o.c.b.spring.boot.example.Subscriptions  : Subscription with topic name 'invoiceArchiver' not yet opened
-2021-03-19 11:41:30.536  INFO 24157 --- [           main] o.c.b.spring.boot.example.Subscriptions  : Subscription with topic name 'invoiceArchiver' opened
-2021-03-19 11:41:30.536  INFO 24157 --- [           main] o.c.b.spring.boot.example.Subscriptions  : Subscription with topic name 'invoiceArchiver' temporarily closed
-2021-03-19 11:41:30.537  INFO 24157 --- [           main] o.c.b.spring.boot.example.Subscriptions  : Subscription with topic name 'invoiceArchiver' reopened again
-...
-2021-03-19 11:41:09.697  INFO 24157 --- [criptionManager] o.c.b.s.b.example.HandlerConfiguration   : The External Task 8fee791f-889f-11eb-bfb9-8e4eb3fc8d8b has been completed!
-2021-03-19 11:41:09.718  INFO 24157 --- [criptionManager] o.c.b.s.b.example.HandlerConfiguration   : The External Task 92ed132c-889f-11eb-bfb9-8e4eb3fc8d8b has been completed!
-2021-03-19 11:41:09.738  INFO 24157 --- [criptionManager] o.c.b.s.b.example.HandlerConfiguration   : The External Task 89f0cfd5-889f-11eb-bfb9-8e4eb3fc8d8b has been completed!
-...
-2021-03-19 11:41:09.893  INFO 24157 --- [criptionManager] o.c.b.s.b.example.HandlerConfiguration   : Invoice on process scope archived: Invoice [id=A123]
-2021-03-19 11:41:09.906  INFO 24157 --- [criptionManager] o.c.b.s.b.example.HandlerConfiguration   : Invoice on process scope archived: Invoice [id=A123]
-2021-03-19 11:41:09.919  INFO 24157 --- [criptionManager] o.c.b.s.b.example.HandlerConfiguration   : Invoice on process scope archived: Invoice [id=A123]
-...
+2022-05-17 13:32:26.077  INFO 38932 --- [           main] o.c.bpm.spring.boot.example.Application  : Starting Application using Java 11.0.15.1 
+
+[...]
+
+2022-05-17 13:32:27.188  INFO 38932 --- [           main] o.c.b.spring.boot.example.Subscriptions  : Subscription bean 'firstTaskHandlerSubscription' has topic name: myFirstServiceTask 
+2022-05-17 13:32:27.188  INFO 38932 --- [           main] o.c.b.spring.boot.example.Subscriptions  : Subscription bean 'secondTaskHandlerSubscription' has topic name: mySecondServiceTask 
+2022-05-17 13:32:27.255  INFO 38932 --- [           main] o.c.bpm.spring.boot.example.Application  : Started Application in 1.829 seconds (JVM running for 2.713)
+2022-05-17 13:32:27.260  INFO 38932 --- [           main] o.c.b.spring.boot.example.Subscriptions  : Subscription with topic name 'myFirstServiceTask' initialized
+2022-05-17 13:32:27.260  INFO 38932 --- [           main] o.c.b.spring.boot.example.Subscriptions  : Subscription with topic name 'mySecondServiceTask' initialized
+2022-05-17 13:32:34.043  INFO 38932 --- [criptionManager] o.c.b.s.b.example.servietasks.FirstTask  : HandlerConfiguration
+2022-05-17 13:32:34.065  INFO 38932 --- [criptionManager] o.c.b.s.b.example.servietasks.FirstTask  : The External Task 0b82e243-d5d5-11ec-9353-0242ac110002 has been completed!
+2022-05-17 13:32:34.078  INFO 38932 --- [criptionManager] o.c.b.s.b.e.servietasks.SecondTask       : SecondTask
+2022-05-17 13:32:34.091  INFO 38932 --- [criptionManager] o.c.b.s.b.e.servietasks.SecondTask       : The External Task 0b93841a-d5d5-11ec-9353-0242ac110002 has been completed!
+
 ```

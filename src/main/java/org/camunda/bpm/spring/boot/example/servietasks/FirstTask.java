@@ -14,13 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.camunda.bpm.spring.boot.example;
+package org.camunda.bpm.spring.boot.example.servietasks;
 
 import org.camunda.bpm.client.spring.annotation.ExternalTaskSubscription;
 import org.camunda.bpm.client.task.ExternalTaskHandler;
-import org.camunda.bpm.client.variable.ClientValues;
-import org.camunda.bpm.engine.variable.value.ObjectValue;
-import org.camunda.bpm.engine.variable.value.TypedValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
@@ -30,53 +27,32 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Configuration
-public class HandlerConfiguration {
+public class FirstTask {
 
-  protected static final Logger LOG = LoggerFactory.getLogger(HandlerConfiguration.class);
+  protected static final Logger LOG = LoggerFactory.getLogger(FirstTask.class);
 
   @Bean
-  @ExternalTaskSubscription("invoiceCreator")
-  public ExternalTaskHandler invoiceCreatorHandler() {
+  @ExternalTaskSubscription("myFirstServiceTask")
+  public ExternalTaskHandler firstTaskHandler() {
     return (externalTask, externalTaskService) -> {
 
-      // instantiate an invoice object
-      Invoice invoice = new Invoice("A123");
+      LOG.info("HandlerConfiguration");
 
-      // create an object typed variable with the serialization format XML
-      ObjectValue invoiceValue = ClientValues
-          .objectValue(invoice)
-          .serializationDataFormat("application/xml")
-          .create();
 
-      // add the invoice object and its id to a map
       Map<String, Object> variables = new HashMap<>();
-      variables.put("invoiceId", invoice.id);
-      variables.put("invoice", invoiceValue);
 
       // select the scope of the variables
       boolean isRandomSample = Math.random() <= 0.5;
       if (isRandomSample) {
-        externalTaskService.complete(externalTask, variables);
+        variables.put("test", "lalala");
       } else {
-        externalTaskService.complete(externalTask, null, variables);
+        variables.put("test", "blablabla");
       }
+      
+      externalTaskService.complete(externalTask, variables);
 
       LOG.info("The External Task {} has been completed!", externalTask.getId());
 
-    };
-  }
-
-  @Bean
-  @ExternalTaskSubscription(
-      topicName = "invoiceArchiver",
-      autoOpen = false
-  )
-  public ExternalTaskHandler invoiceArchiverHandler() {
-    return (externalTask, externalTaskService) -> {
-      TypedValue typedInvoice = externalTask.getVariableTyped("invoice");
-      Invoice invoice = (Invoice) typedInvoice.getValue();
-      LOG.info("Invoice on process scope archived: {}", invoice);
-      externalTaskService.complete(externalTask);
     };
   }
 

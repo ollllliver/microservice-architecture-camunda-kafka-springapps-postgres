@@ -32,17 +32,15 @@ public class Subscriptions implements ApplicationListener<SubscriptionInitialize
   protected static final Logger LOG = LoggerFactory.getLogger(Subscriptions.class);
 
   @Autowired
-  public SpringTopicSubscription invoiceCreatorHandlerSubscription;
+  public SpringTopicSubscription firstTaskHandlerSubscription;
 
   @Autowired
-  public SpringTopicSubscription invoiceArchiverHandlerSubscription;
+  public SpringTopicSubscription secondTaskHandlerSubscription;
 
   @PostConstruct
   public void listSubscriptionBeans() {
-    LOG.info("Subscription bean 'invoiceCreatorHandlerSubscription' has topic name: {} ",
-        invoiceCreatorHandlerSubscription.getTopicName());
-    LOG.info("Subscription bean 'invoiceArchiverHandlerSubscription' has topic name: {} ",
-        invoiceArchiverHandlerSubscription.getTopicName());
+    LOG.info("Subscription bean 'firstTaskHandlerSubscription' has topic name: {} ", firstTaskHandlerSubscription.getTopicName());
+    LOG.info("Subscription bean 'secondTaskHandlerSubscription' has topic name: {} ", secondTaskHandlerSubscription.getTopicName());
   }
 
   @Override
@@ -60,15 +58,6 @@ public class Subscriptions implements ApplicationListener<SubscriptionInitialize
 
       LOG.info("Subscription with topic name '{}' opened", topicName);
 
-      springTopicSubscription.close();
-
-      LOG.info("Subscription with topic name '{}' temporarily closed", topicName);
-
-      // do something with subscription closed
-
-      springTopicSubscription.open();
-
-      LOG.info("Subscription with topic name '{}' reopened again", topicName);
     }
   }
 
