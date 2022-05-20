@@ -1,11 +1,21 @@
-# External Task Client Spring Boot Starter: Order Handling Example
+# Project Architecture
+
+![Architecture](architecture2.jpg)
+
+## table of contents
+ - Camunda External Task Client
+ - Kafka Producer
+ - Kafka Consumer
+ - how to run
+
+## External Task Client Spring Boot Starter: Order Handling Example
 
 This example demonstrates how to use the Spring Boot Starter to ...
 * ... configure the External Task Client and topic subscriptions
 * ... subscribe to topics so the Client can fetch and lock for External Tasks
 * ... execute custom business logic defined in a handler bean for each fetched External Task
 
-## Why is this example interesting?
+### Why is this example interesting?
 
 This example shows how to annotate a `@EnableExternalTaskClient` class to bootstrap an External Task Client 
 and subscribe to topics to execute custom business logic using the `@ExternalTaskSubscription` annotation.
@@ -14,7 +24,7 @@ subscription after the application has been started.
 
 > This example is based on the [External Task Client Spring Boot Starter: Order Handling Example](https://github.com/camunda/camunda-bpm-examples/tree/master/spring-boot-starter/external-task-client/order-handling-spring-boot).
 
-## Please show me the important parts!
+### Please show me the important parts!
 
 Let's first add the dependency to the project's `pom.xml` file:
 ```xml
@@ -104,7 +114,7 @@ public class FirstTask {
 In the `Subscriptions` class we auto-wire the subscription beans and can access the configuration
 of the beans. 
 
-## How to use it?
+### How to use it?
 
 1. Make sure to have an up and running Camunda Platform Runtime REST API on 8080
 2. Deploy the process [demo-process.bpmn](./demo-process.bpmn) to the Camunda Platform Runtime (e.g., via Camunda Modeler)
@@ -142,3 +152,17 @@ of the beans.
 2022-05-17 13:32:34.091  INFO 38932 --- [criptionManager] o.c.b.s.b.e.servietasks.SecondTask       : The External Task 0b93841a-d5d5-11ec-9353-0242ac110002 has been completed!
 
 ```
+
+## Kafka Producer
+
+The kafka producer frequently produces hardcoded records to hardcoded topics. Actualy not doing anything else... for more information, searche for kafka producer.
+
+## Cafka Consumer
+
+The kafka consumer is consuming records from a hardcoded topic and in case of key equals "startProcess", it tryes to start a camunda process with in the value given process ID via REST to the camunda-process-engine-server. For more information, searche for kafka producer.
+
+## How To Run
+
+docker-compose.yml up starts kafka for messaging, postgres as database for Camunda, Camunda as engine, Spring Boot App Worker to subscribe at Camunda Engine for external Tasks via REST, Camunda as Cockpit, Spring Boot App Producer to simulate incomming Kafka Records and Spring Boot App as Kafka consumer, whitch starts Camunda Process via REST.
+
+![Architecture](architecture1.jpg)

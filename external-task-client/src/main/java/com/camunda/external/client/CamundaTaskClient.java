@@ -14,16 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.camunda.bpm.spring.boot.example;
+package com.camunda.external.client;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class Application {
+public class CamundaTaskClient {
 
   public static void main(String... args) {
-    SpringApplication.run(Application.class, args);
+    SpringApplication.run(CamundaTaskClient.class, args);
   }
 
 }

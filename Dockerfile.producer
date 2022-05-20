@@ -1,0 +1,5 @@
+FROM java:8
+
+ADD kafka-producer/target/kafka-producer-0.0.1-SNAPSHOT.jar /
+
+ENTRYPOINT [ "java", "-jar", "kafka-producer-0.0.1-SNAPSHOT.jar" ]

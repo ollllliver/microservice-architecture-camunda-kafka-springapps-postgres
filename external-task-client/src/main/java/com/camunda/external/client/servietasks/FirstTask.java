@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.camunda.bpm.spring.boot.example.servietasks;
+package com.camunda.external.client.servietasks;
 
 import org.camunda.bpm.client.spring.annotation.ExternalTaskSubscription;
 import org.camunda.bpm.client.task.ExternalTaskHandler;
@@ -27,29 +27,28 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Configuration
-public class SecondTask {
+public class FirstTask {
 
-  protected static final Logger LOG = LoggerFactory.getLogger(SecondTask.class);
+  protected static final Logger LOG = LoggerFactory.getLogger(FirstTask.class);
 
   @Bean
-  @ExternalTaskSubscription("mySecondServiceTask")
-  public ExternalTaskHandler secondTaskHandler() {
+  @ExternalTaskSubscription("myFirstServiceTask")
+  public ExternalTaskHandler firstTaskHandler() {
     return (externalTask, externalTaskService) -> {
 
-      String test = externalTask.getVariable("test");
-      LOG.info("SecondTask");
+      LOG.info("HandlerConfiguration");
 
 
       Map<String, Object> variables = new HashMap<>();
-      variables.put("test", test);
 
       // select the scope of the variables
       boolean isRandomSample = Math.random() <= 0.5;
       if (isRandomSample) {
-        variables.put("auto", "lalala");
+        variables.put("test", "lalala");
       } else {
-        variables.put("auto", "blablabla");
+        variables.put("test", "blablabla");
       }
+      
       externalTaskService.complete(externalTask, variables);
 
       LOG.info("The External Task {} has been completed!", externalTask.getId());

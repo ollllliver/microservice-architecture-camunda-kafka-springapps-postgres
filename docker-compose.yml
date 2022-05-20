@@ -1,0 +1,119 @@
+version: '3'
+
+services:
+
+  postgres:
+    image: postgres
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    container_name: postgres
+
+  camunda-process-engine-server:
+    image: camunda-process-engine-server
+    container_name: camunda-process-engine-server
+    ports:
+      - '8081:8080'
+    links:
+      - postgres:db
+    environment:
+      - DB_DRIVER=org.postgresql.Driver
+      - DB_URL=jdbc:postgresql://db:5432/postgres
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
+      - WAIT_FOR=db:5432
+    build:
+      context: .
+      dockerfile: Dockerfile.camunda
+
+  camunda-web:
+    image: camunda-web
+    container_name: camunda-web
+    ports:
+      - '8080:8080'
+    links:
+      - postgres:db
+    environment:
+      - DB_DRIVER=org.postgresql.Driver
+      - DB_URL=jdbc:postgresql://db:5432/postgres
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
+      - WAIT_FOR=db:5432
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+
+
+  client:
+    image: external-task-client
+    container_name: external-task-client
+    links:
+      - camunda-process-engine-server:camunda-process-engine-server
+    build:
+      context: .
+      dockerfile: Dockerfile.client
+      
+  kafka-zookeeper:
+    image: confluentinc/cp-zookeeper:6.0.0
+    container_name: kafka-zookeeper
+    hostname: kafka-zookeeper
+    ports:
+      - "2181:2181"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"  
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 10000
+      KAFKA_LOG4J_ROOT_LOGLEVEL: 'INFO'
+      KAFKA_TOOLS_LOG4J_LOGLEVEL: 'ERROR'
+
+  kafka-broker:
+    image: confluentinc/cp-kafka:6.0.0
+    container_name: kafka-broker
+    hostname: kafka-broker
+    depends_on:
+      - kafka-zookeeper
+    ports:
+      - "9092:9092"
+      - "9991:9991"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"  
+    environment:
+      KAFKA_BROKER_ID: 0
+      KAFKA_ZOOKEEPER_CONNECT: 'kafka-zookeeper:2181'
+      KAFKA_LISTENERS: 'LISTENER_EXTERNAL://0.0.0.0:9092,LISTENER_INTERNAL://0.0.0.0:29092'
+      KAFKA_ADVERTISED_LISTENERS: "LISTENER_EXTERNAL://kafka-broker:9092,LISTENER_INTERNAL://kafka-broker:29092"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "LISTENER_EXTERNAL:PLAINTEXT,LISTENER_INTERNAL:PLAINTEXT"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "LISTENER_INTERNAL"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_LOG4J_LOGGERS: "state.change.logger=INFO,kafka.controller=INFO,kafka.producer.async.DefaultEventHandler=INFO"
+      KAFKA_LOG4J_ROOT_LOGLEVEL: 'INFO'
+      KAFKA_TOOLS_LOG4J_LOGLEVEL: 'ERROR'
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 1
+      KAFKA_NUM_PARTITIONS: 3
+  
+  consumer:
+    image: kafka-consumer
+    container_name: kafka-consumer
+    links:
+      - camunda-process-engine-server:camunda-process-engine-server
+      - kafka-broker:kafka-broker
+    build:
+      context: .
+      dockerfile: Dockerfile.consumer
+
+  producer:
+    image: kafka-producer
+    container_name: kafka-producer
+    links:
+      - kafka-broker:kafka-broker
+    build:
+      context: .
+      dockerfile: Dockerfile.producer

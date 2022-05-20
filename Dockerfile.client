@@ -1,0 +1,5 @@
+FROM java:8
+
+ADD external-task-client/target/external-task-client-0.0.1-SNAPSHOT.jar /
+
+ENTRYPOINT [ "java", "-jar", "external-task-client-0.0.1-SNAPSHOT.jar" ]

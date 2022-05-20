@@ -1,0 +1,7 @@
+spring:
+  main:
+    web-application-type: none
+  kafka:
+    bootstrap-servers: kafka-broker:9092
+    consumer:
+      auto-offset-reset: earliest
