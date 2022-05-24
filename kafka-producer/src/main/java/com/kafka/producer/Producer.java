@@ -1,4 +1,4 @@
-package com.kafka.consumer;
+package com.kafka.producer;
 
 import java.util.Scanner;
 

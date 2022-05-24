@@ -1,4 +1,4 @@
-package com.kafka.consumer.config;
+package com.kafka.producer.config;
 
 import java.util.Map;
 

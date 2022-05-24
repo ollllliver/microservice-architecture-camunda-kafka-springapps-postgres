@@ -1,6 +1,6 @@
 # Project Architecture
 
-![Architecture](architecture2.jpg)
+![Architecture](assets/architecture2.jpg)
 
 ## table of contents
  - Camunda External Task Client
@@ -54,7 +54,7 @@ public class Application {
 To configure the External Task Client, we create an `application.yml` file:
 ```yaml
 camunda.bpm.client:
-  base-url: http://localhost:8080/engine-rest # The URL pointing to the Camunda Platform Runtime REST API
+  base-url: http://localhost:8081/engine-rest # The URL pointing to the Camunda Platform Runtime REST API
   async-response-timeout: 1000 # Defines the maximum duration of the long-polling request
   worker-id: spring-boot-client # Identifies the worker towards the Engine
 ```
@@ -116,7 +116,7 @@ of the beans.
 
 ### How to use it?
 
-1. Make sure to have an up and running Camunda Platform Runtime REST API on 8080
+1. Make sure to have an up and running Camunda Platform Runtime REST API on 8081
 2. Deploy the process [demo-process.bpmn](./demo-process.bpmn) to the Camunda Platform Runtime (e.g., via Camunda Modeler)
 3. Start the main class in your IDE
 4. Start a process in [Camunda Web Interface](http://localhost:8080/camunda/app/tasklist/default/)
@@ -165,4 +165,8 @@ The kafka consumer is consuming records from a hardcoded topic and in case of ke
 
 docker-compose.yml up starts kafka for messaging, postgres as database for Camunda, Camunda as engine, Spring Boot App Worker to subscribe at Camunda Engine for external Tasks via REST, Camunda as Cockpit, Spring Boot App Producer to simulate incomming Kafka Records and Spring Boot App as Kafka consumer, whitch starts Camunda Process via REST.
 
-![Architecture](architecture1.jpg)
+![Architecture](assets/architecture1.jpg)
+
+After all containers started up running, the producer will frequently produce records, that will be recieved by the consumer. The consumer will start a process with the given process ID and the external task client runs the tasks of the process.
+
+![Output](assets/output.png)

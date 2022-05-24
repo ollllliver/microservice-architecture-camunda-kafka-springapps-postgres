@@ -25,7 +25,7 @@ public class Consumer {
 
     private static void startProcess(String proess_id)
     {
-        final String uri = String.format("http://camunda-server:8080/engine-rest/process-definition/key/%s/start", proess_id);
+        final String uri = String.format("http://camunda-process-engine-server:8080/engine-rest/process-definition/key/%s/start", proess_id);
 
         RestTemplate restTemplate = new RestTemplate();
 
@@ -40,6 +40,9 @@ public class Consumer {
             System.out.printf("### Please first deploy a process with process ID: \"%s\"%n", proess_id);
         } catch (Exception e) {
             System.out.println(e.getMessage());
+            System.out.println("### Make shure, camunda-process-engine-server container is running.");
         }
     }
 }
+
+

@@ -16,6 +16,8 @@ services:
       - '8081:8080'
     links:
       - postgres:db
+    depends_on:
+      - postgres
     environment:
       - DB_DRIVER=org.postgresql.Driver
       - DB_URL=jdbc:postgresql://db:5432/postgres
@@ -33,6 +35,8 @@ services:
       - '8080:8080'
     links:
       - postgres:db
+    depends_on:
+      - postgres
     environment:
       - DB_DRIVER=org.postgresql.Driver
       - DB_URL=jdbc:postgresql://db:5432/postgres
@@ -49,6 +53,8 @@ services:
     container_name: external-task-client
     links:
       - camunda-process-engine-server:camunda-process-engine-server
+    depends_on:
+      - camunda-process-engine-server
     build:
       context: .
       dockerfile: Dockerfile.client
@@ -105,6 +111,8 @@ services:
     links:
       - camunda-process-engine-server:camunda-process-engine-server
       - kafka-broker:kafka-broker
+    depends_on:
+      - kafka-broker
     build:
       context: .
       dockerfile: Dockerfile.consumer
@@ -114,6 +122,8 @@ services:
     container_name: kafka-producer
     links:
       - kafka-broker:kafka-broker
+    depends_on:
+      - kafka-broker
     build:
       context: .
       dockerfile: Dockerfile.producer
